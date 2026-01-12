@@ -4,16 +4,23 @@ import axios from 'axios'
 const router = express.Router()
 
 router.get('/', async (req, res) => {
-    const { namePrefix } = req.query
+    const { namePrefix, countryIds } = req.query
 
     try {
+        const params = {
+            namePrefix,
+            limit: 10
+        }
+        
+        // Add country filter if provided
+        if (countryIds) {
+            params.countryIds = countryIds
+        }
+        
         const response = await axios.get(
             'https://wft-geo-db.p.rapidapi.com/v1/geo/cities',
             {
-                params: {
-                    namePrefix,
-                    limit: 10
-                },
+                params,
                 headers: {
                     'x-rapidapi-key': process.env.RAPIDAPI_KEY,
                     'x-rapidapi-host': 'wft-geo-db.p.rapidapi.com'
