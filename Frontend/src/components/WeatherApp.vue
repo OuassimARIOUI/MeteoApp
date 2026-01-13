@@ -1,7 +1,8 @@
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import WeatherMap from './WeatherMap.vue'
 
 const router = useRouter()
 const darkMode = ref(false)
@@ -23,6 +24,11 @@ const uvIndex = ref(null)
 const airQuality = ref(null)
 const sidebarOpen = ref(true)
 const showMobileMenu = ref(false)
+const showDropdown = ref(false)
+const inputFocused = ref(false)
+const searchInput = ref(null)
+const searchInputContainer = ref(null)
+const dropdownStyle = ref({})
 
 // Load data from localStorage
 onMounted(() => {
@@ -37,6 +43,16 @@ onMounted(() => {
   
   // Try to get user's location
   getUserLocation()
+  
+  // Update dropdown position on scroll and resize
+  window.addEventListener('scroll', updateDropdownPosition, true)
+  window.addEventListener('resize', updateDropdownPosition)
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  window.removeEventListener('scroll', updateDropdownPosition, true)
+  window.removeEventListener('resize', updateDropdownPosition)
 })
 
 const toggleDarkMode = () => {
@@ -44,43 +60,102 @@ const toggleDarkMode = () => {
   localStorage.setItem('darkMode', JSON.stringify(darkMode.value))
 }
 
-const getUserLocation = () => {
+const getUserLocation = async () => {
   if (navigator.geolocation) {
+    isLoading.value = true
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        // In a real app, you'd reverse geocode these coordinates
-        alertMessage.value = '📍 Position détectée!'
+        const { latitude, longitude } = position.coords
+        
+        try {
+          // Use reverse geocoding API to get city name from coordinates
+          const geoRes = await axios.get(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`)
+          
+          if (geoRes.data && geoRes.data.city) {
+            const detectedCity = geoRes.data.city
+            const detectedCountry = geoRes.data.countryCode
+            
+            city.value = detectedCity
+            country.value = detectedCountry
+            searchCity.value = detectedCity
+            
+            alertMessage.value = '📍 Position détectée: ' + detectedCity
+            showAlert.value = true
+            setTimeout(() => showAlert.value = false, 3000)
+            
+            // Load weather for detected location
+            await getWeather()
+          } else {
+            alertMessage.value = '⚠️ Impossible de détecter la ville'
+            showAlert.value = true
+            setTimeout(() => showAlert.value = false, 3000)
+          }
+        } catch (error) {
+          console.error('Reverse geocoding error:', error)
+          alertMessage.value = '❌ Erreur de géolocalisation'
+          showAlert.value = true
+          setTimeout(() => showAlert.value = false, 3000)
+        } finally {
+          isLoading.value = false
+        }
+      },
+      (error) => {
+        console.log('Geolocation error:', error)
+        alertMessage.value = '❌ Accès à la localisation refusé'
         showAlert.value = true
         setTimeout(() => showAlert.value = false, 3000)
-      },
-      (error) => console.log('Geolocation error:', error)
+        isLoading.value = false
+      }
     )
+  } else {
+    alertMessage.value = '⚠️ Géolocalisation non supportée'
+    showAlert.value = true
+    setTimeout(() => showAlert.value = false, 3000)
   }
 }
 
 const getCities = async () => {
   if (searchCity.value.length >= 2) {
     try {
-      console.log('Fetching cities for:', searchCity.value, 'country:', country.value)
-      let url = `http://localhost:3001/cities?namePrefix=${searchCity.value}`
-      if (country.value && country.value.length === 2) {
-        url += `&countryIds=${country.value.toUpperCase()}`
-      }
+      const url = `http://localhost:3001/cities?namePrefix=${searchCity.value}`
       const res = await axios.get(url)
-      console.log('Cities response:', res.data)
       cities.value = res.data
-      console.log('Cities set:', cities.value)
+      showDropdown.value = res.data.length > 0
+      updateDropdownPosition()
     } catch (error) {
       console.error('Error fetching cities:', error)
+      cities.value = []
+      showDropdown.value = false
     }
   } else {
     cities.value = []
+    showDropdown.value = false
   }
+}
+
+const updateDropdownPosition = () => {
+  if (searchInput.value) {
+    const rect = searchInput.value.getBoundingClientRect()
+    dropdownStyle.value = {
+      position: 'fixed',
+      top: `${rect.bottom + 8}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`
+    }
+  }
+}
+
+const selectCity = (selectedCity) => {
+  city.value = selectedCity.name
+  country.value = selectedCity.country
+  searchCity.value = selectedCity.name
+  showDropdown.value = false
+  getWeather()
 }
 
 const getWeather = async () => {
   if (!city.value || !country.value) {
-    alertMessage.value = '⚠️ Veuillez sélectionner une ville et un pays'
+    alertMessage.value = '⚠️ Veuillez sélectionner une ville'
     showAlert.value = true
     setTimeout(() => showAlert.value = false, 3000)
     return
@@ -216,6 +291,31 @@ const isFavorite = computed(() => {
   return favorites.value.some(f => f.city === city.value && f.country === country.value)
 })
 
+// Handle click outside to close dropdown
+const handleClickOutside = () => {
+  setTimeout(() => {
+    if (!inputFocused.value) {
+      showDropdown.value = false
+    }
+  }, 200)
+}
+
+const handleInputFocus = () => {
+  inputFocused.value = true
+  if (cities.value.length > 0) {
+    showDropdown.value = true
+    updateDropdownPosition()
+  }
+}
+
+const handleInputBlur = () => {
+  // Delay closing dropdown to allow click on items
+  setTimeout(() => {
+    inputFocused.value = false
+    showDropdown.value = false
+  }, 150)
+}
+
 watch(searchCity, () => {
   getCities()
 })
@@ -223,10 +323,13 @@ watch(searchCity, () => {
 
 <template>
   <div class="flex h-screen text-white overflow-hidden" style="background-color: #0a0c14;">
-    <!-- Alert Notification -->
+    <!-- Alert Notification - iOS Style -->
     <transition name="alert">
-      <div v-if="showAlert" class="fixed top-4 right-4 z-50 glass px-6 py-4 rounded-xl shadow-2xl border border-primary/30 animate-bounce">
-        {{ alertMessage }}
+      <div v-if="showAlert" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 glass px-6 py-4 rounded-2xl shadow-2xl border border-primary/20 backdrop-blur-2xl max-w-md">
+        <div class="flex items-center gap-3">
+          <div class="text-2xl">{{ alertMessage.charAt(0) }}</div>
+          <span class="font-bold">{{ alertMessage.substring(2) }}</span>
+        </div>
       </div>
     </transition>
 
@@ -291,39 +394,32 @@ watch(searchCity, () => {
       </header>
 
       <div class="p-6 space-y-6">
-        <!-- Search Card -->
+        <!-- Search Card with iOS-style dropdown -->
         <div class="glass p-6 rounded-2xl purple-glow">
           <h2 class="text-lg font-extrabold mb-4 flex items-center gap-2">
             <svg class="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-            Search Location
+            Rechercher une ville
           </h2>
           
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">Country Code</label>
-              <input v-model="country" maxlength="2" placeholder="FR, US, DZ" class="w-full glass px-4 py-3 rounded-xl border border-white/10 focus:border-primary transition-all outline-none font-bold uppercase">
-            </div>
-            <div class="md:col-span-2">
-              <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">City Name</label>
-              <input v-model="searchCity" placeholder="Start typing..." class="w-full glass px-4 py-3 rounded-xl border border-white/10 focus:border-primary transition-all outline-none font-bold">
+          <div class="relative">
+            <div class="relative" ref="searchInputContainer">
+              <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none z-10" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+              <input 
+                ref="searchInput"
+                v-model="searchCity" 
+                @focus="handleInputFocus"
+                @blur="handleInputBlur"
+                placeholder="Paris, London, New York..." 
+                class="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-white/10 focus:border-primary/50 transition-all outline-none font-medium text-lg bg-slate-800/50 backdrop-blur-xl hover:bg-slate-800/70"
+                autocomplete="off"
+              >
             </div>
           </div>
 
-          <div v-if="cities.length > 0" class="mb-4">
-            <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">Select City</label>
-            <select v-model="city" class="w-full px-4 py-3 rounded-xl border border-white/10 focus:border-primary transition-all outline-none font-bold bg-slate-800 text-white">
-              <option disabled value="" class="bg-slate-800 text-white">Choose a city</option>
-              <option v-for="c in cities" :key="c.id" :value="c.name" class="bg-slate-800 text-white">{{ c.name }} ({{ c.country }})</option>
-            </select>
-          </div>
-
-          <div class="flex flex-wrap gap-3">
-            <button @click="getWeather" :disabled="isLoading" class="shimmer-gold text-background-dark px-6 py-3 rounded-xl font-black flex items-center gap-2 hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed">
-              <svg v-if="isLoading" class="animate-spin w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4V2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10h-2c0 4.41-3.59 8-8 8s-8-3.59-8-8 3.59-8 8-8z"/></svg>
-              <svg v-else class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46C10.21 6.23 11.08 6 12 6c3.04 0 5.5 2.46 5.5 5.5v.5H19c1.66 0 3 1.34 3 3 0 1.13-.64 2.11-1.56 2.62l1.45 1.45C23.16 18.16 24 16.68 24 15c0-2.64-2.05-4.78-4.65-4.96z"/></svg>
-              {{ isLoading ? 'Loading...' : weather ? 'Refresh' : 'Get Weather' }}
-            </button>
-            <button v-if="city && country" @click="addToFavorites" :class="['glass px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/10 transition-all', isFavorite ? 'border-2 border-primary' : '']">
+          <div v-if="city && country" class="flex flex-wrap gap-3 mt-4">
+            <button @click="addToFavorites" :class="['glass px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/10 transition-all', isFavorite ? 'border-2 border-primary' : '']">
               <svg class="w-5 h-5" :class="isFavorite ? 'text-primary' : ''" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
               {{ isFavorite ? 'Favorited' : 'Add to Favorites' }}
             </button>
@@ -428,11 +524,13 @@ watch(searchCity, () => {
             </div>
 
             <!-- Map Section -->
-            <div v-if="currentView === 'map'" class="glass p-8 rounded-2xl purple-glow text-center">
+            <div v-if="currentView === 'map' && weather">
+              <WeatherMap :city="city" :country="country" :weather="weather" />
+            </div>
+            <div v-else-if="currentView === 'map' && !weather" class="glass p-8 rounded-2xl purple-glow text-center">
               <div class="text-6xl mb-4">🗺️</div>
               <h3 class="text-2xl font-black mb-2">Interactive Weather Map</h3>
-              <p class="text-slate-400 font-bold mb-4">Visualize real-time weather conditions</p>
-              <p class="text-sm text-slate-500">Coming soon with live radar and satellite imagery</p>
+              <p class="text-slate-400 font-bold mb-4">Search for a city first to view its location on the map</p>
             </div>
           </div>
 
@@ -507,21 +605,120 @@ watch(searchCity, () => {
         </transition>
       </div>
     </main>
+    
+    <!-- iOS-style dropdown - Teleported to body for proper z-index -->
+    <Teleport to="body">
+      <transition name="dropdown">
+        <div v-if="showDropdown && cities.length > 0" 
+             class="bg-slate-800/95 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-80 overflow-y-auto custom-scrollbar" 
+             :style="{ ...dropdownStyle, zIndex: 99999 }">
+          <div 
+            v-for="(c, index) in cities" 
+            :key="c.id"
+            @mousedown.prevent="selectCity(c)"
+            class="flex items-center gap-4 px-5 py-4 hover:bg-white/10 transition-all cursor-pointer border-b border-white/5 last:border-b-0 active:bg-primary/20"
+          >
+            <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-base truncate">{{ c.name }}</div>
+              <div class="text-sm text-slate-400 font-medium">{{ c.country }}</div>
+            </div>
+            <svg class="w-5 h-5 text-slate-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+            </svg>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
 <style scoped>
-.alert-enter-active, .alert-leave-active {
-  transition: all 0.3s ease;
+.alert-enter-active {
+  animation: alert-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.alert-enter-from, .alert-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
+.alert-leave-active {
+  animation: alert-out 0.3s cubic-bezier(0.4, 0, 1, 1);
 }
+
+@keyframes alert-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes alert-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -30px) scale(0.9);
+  }
+}
+
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s ease;
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* Dropdown animation - iOS style */
+.dropdown-enter-active {
+  animation: dropdown-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dropdown-leave-active {
+  animation: dropdown-out 0.2s cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes dropdown-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+}
+
+/* Custom scrollbar - iOS style */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 </style>
