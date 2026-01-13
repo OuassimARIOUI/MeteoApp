@@ -8,12 +8,21 @@
   --color-accent-purple: #2d1b4d;
 }
 
-/* Custom Glass and Utility Classes */
-.glass {
+/* Custom Glass and Utility Classes - Dynamic based on parent text color */
+.text-gray-900 .glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.text-white .glass {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
 }
 
 .shimmer-gold {
