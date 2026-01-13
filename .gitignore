@@ -1,0 +1,7 @@
+.env
+Backend/.env
+Frontend/.env
+.DS_Store
+Backend/node_modules/
+Frontend/node_modules/
+Frontend/.vscode/
