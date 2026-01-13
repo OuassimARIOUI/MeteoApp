@@ -3,6 +3,7 @@ import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import WeatherMap from './WeatherMap.vue'
+import { API_BASE_URL } from '../config/api.js'
 
 const router = useRouter()
 const darkMode = ref(false)
@@ -117,7 +118,7 @@ const getUserLocation = async () => {
 const getCities = async () => {
   if (searchCity.value.length >= 2) {
     try {
-      const url = `http://localhost:3001/cities?namePrefix=${searchCity.value}`
+      const url = `${API_BASE_URL}/api/cities?namePrefix=${searchCity.value}`
       const res = await axios.get(url)
       cities.value = res.data
       showDropdown.value = res.data.length > 0
@@ -163,7 +164,7 @@ const getWeather = async () => {
   
   isLoading.value = true
   try {
-    const res = await fetch(`http://localhost:3001/weather?city=${city.value}&country=${country.value}`)
+    const res = await fetch(`${API_BASE_URL}/api/weather?city=${city.value}&country=${country.value}`)
     const data = await res.json()
     weather.value = data
     

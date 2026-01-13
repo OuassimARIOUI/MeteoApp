@@ -6,13 +6,29 @@ import cities from './routes/cities.js';
 dotenv.config();
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// CORS configuration - permet les requêtes depuis localhost et Netlify
+app.use(cors({
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:5174',
+    'https://*.netlify.app',
+    /\.netlify\.app$/
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
-app.use('/weather',weather);
-app.use('/cities', cities)
+app.use('/api/weather', weather);
+app.use('/api/cities', cities);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 app.listen(PORT, () => {
-    console.log(`Server started on port ${PORT}`);
-})
+    console.log(`🚀 Server started on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+});
