@@ -1,8 +1,16 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import TypingText from './TypingText.vue'
 
 const router = useRouter()
+
+const typingTexts = [
+  'avec Précision',
+  'avec Intelligence',
+  'avec Confiance',
+  'en Temps Réel'
+]
 
 const goToApp = () => {
   router.push('/weather')
@@ -26,16 +34,16 @@ const goToApp = () => {
         </div>
         <div class="hidden md:flex items-center gap-8">
           <a class="text-sm font-medium hover:text-primary transition-colors cursor-pointer">Solutions</a>
-          <a class="text-sm font-medium hover:text-primary transition-colors cursor-pointer">Accuracy Data</a>
-          <a class="text-sm font-medium hover:text-primary transition-colors cursor-pointer">Pricing</a>
-          <a class="text-sm font-medium hover:text-primary transition-colors cursor-pointer">Enterprise</a>
+          <a class="text-sm font-medium hover:text-primary transition-colors cursor-pointer">Données de Précision</a>
+          <a class="text-sm font-medium hover:text-primary transition-colors cursor-pointer">Tarifs</a>
+          <a class="text-sm font-medium hover:text-primary transition-colors cursor-pointer">Entreprise</a>
         </div>
         <div class="flex items-center gap-3">
           <button class="hidden sm:block px-5 py-2 text-sm font-bold border border-white/10 rounded-full hover:bg-white/5 transition-all">
-            Log In
+            Connexion
           </button>
           <button @click="goToApp" class="bg-primary text-white px-5 py-2 text-sm font-bold rounded-full hover:brightness-110 transition-all shadow-lg shadow-primary/20">
-            Get Started
+            Commencer
           </button>
         </div>
       </nav>
@@ -51,25 +59,27 @@ const goToApp = () => {
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
               <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
             </span>
-            <span class="text-[10px] font-bold uppercase tracking-widest text-primary">Live Satellite Stream Active</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest text-primary">Flux Satellite en Direct Actif</span>
           </div>
           
           <h1 class="text-5xl md:text-7xl font-black leading-[1.1] tracking-tight text-white">
-            Master the Elements <br/>
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-primary">with Precision</span>
+            Maîtrisez les Éléments <br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-primary">
+              <TypingText :texts="typingTexts" :typing-speed="120" :deleting-speed="60" :pause-time="2500" />
+            </span>
           </h1>
           
           <p class="text-lg md:text-xl text-slate-400 max-w-xl leading-relaxed">
-            Experience enterprise-grade forecasting with hyper-local accuracy and real-time data streaming across all your global assets.
+            Découvrez des prévisions de qualité entreprise avec une précision hyper-locale et des données en temps réel sur tous vos actifs mondiaux.
           </p>
           
           <div class="flex flex-wrap gap-4">
             <button @click="goToApp" class="shimmer-gold text-background-dark px-8 py-4 rounded-xl font-black text-lg shadow-2xl shadow-primary/30 hover:scale-105 transition-transform flex items-center gap-2">
-              Get Started Now
+              Commencer Maintenant
               <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
             </button>
             <button class="glass px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/10 transition-all flex items-center gap-2">
-              View Demo
+              Voir la Démo
               <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </button>
           </div>
@@ -80,7 +90,7 @@ const goToApp = () => {
               <div class="w-10 h-10 rounded-full border-2 border-background-dark bg-gradient-to-br from-green-400 to-cyan-600"></div>
               <div class="w-10 h-10 rounded-full border-2 border-background-dark bg-gradient-to-br from-orange-400 to-pink-600"></div>
             </div>
-            <p class="text-sm text-slate-500 font-medium">Trusted by <span class="text-white font-bold">2,500+</span> global enterprises</p>
+            <p class="text-sm text-slate-500 font-medium">Approuvé par <span class="text-white font-bold">2 500+</span> entreprises mondiales</p>
           </div>
         </div>
 
@@ -96,8 +106,8 @@ const goToApp = () => {
                   </svg>
                   <div class="absolute -bottom-10 -right-10 glass p-6 rounded-2xl shadow-2xl">
                     <div class="flex flex-col gap-1">
-                      <span class="text-xs text-slate-400 font-bold uppercase">Current Temp</span>
-                      <span class="text-3xl font-black">74°F</span>
+                      <span class="text-xs text-slate-400 font-bold uppercase">Temp Actuelle</span>
+                      <span class="text-3xl font-black">23°C</span>
                       <div class="flex gap-1">
                         <div class="w-1 h-4 bg-primary rounded-full"></div>
                         <div class="w-1 h-6 bg-primary rounded-full"></div>
@@ -129,9 +139,9 @@ const goToApp = () => {
                 <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/>
               </svg>
             </div>
-            <h3 class="text-xl font-extrabold mb-3 text-white">Global Coverage</h3>
+            <h3 class="text-xl font-extrabold mb-3 text-white">Couverture Mondiale</h3>
             <p class="text-slate-400 leading-relaxed">
-              Comprehensive data from 40k+ verified stations worldwide, ensuring accuracy in every corner of the globe.
+              Données complètes de 40 000+ stations vérifiées dans le monde, garantissant la précision partout sur le globe.
             </p>
           </div>
 
@@ -142,9 +152,9 @@ const goToApp = () => {
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               </svg>
             </div>
-            <h3 class="text-xl font-extrabold mb-3 text-white">Hyper-local Accuracy</h3>
+            <h3 class="text-xl font-extrabold mb-3 text-white">Précision Hyper-Locale</h3>
             <p class="text-slate-400 leading-relaxed">
-              Advanced ML-driven forecasting with precision down to a 500m radius for your specific facility.
+              Prévisions avancées pilotées par IA avec une précision jusqu'à 500m de rayon pour votre installation spécifique.
             </p>
           </div>
 
@@ -155,9 +165,9 @@ const goToApp = () => {
                 <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
               </svg>
             </div>
-            <h3 class="text-xl font-extrabold mb-3 text-white">Real-time Alerts</h3>
+            <h3 class="text-xl font-extrabold mb-3 text-white">Alertes en Temps Réel</h3>
             <p class="text-slate-400 leading-relaxed">
-              Instant notifications for severe weather shifts with multi-channel delivery for mission-critical operations.
+              Notifications instantanées pour les changements météorologiques sévères avec livraison multi-canal pour opérations critiques.
             </p>
           </div>
         </div>
@@ -168,14 +178,14 @@ const goToApp = () => {
     <section class="py-24 px-6 lg:px-20 text-center relative overflow-hidden">
       <div class="absolute inset-0 bg-primary/5 -skew-y-3"></div>
       <div class="max-w-4xl mx-auto relative z-10 flex flex-col items-center gap-8">
-        <h2 class="text-4xl md:text-5xl font-black text-white">Ready to elevate your weather tracking?</h2>
-        <p class="text-slate-400 text-lg md:text-xl">Join thousands of enterprise users making smarter, weather-informed decisions every day.</p>
+        <h2 class="text-4xl md:text-5xl font-black text-white">Prêt à améliorer votre suivi météo ?</h2>
+        <p class="text-slate-400 text-lg md:text-xl">Rejoignez des milliers d'utilisateurs entreprise qui prennent des décisions plus intelligentes informées par la météo chaque jour.</p>
         <div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
           <button @click="goToApp" class="bg-primary text-white px-10 py-4 rounded-xl font-black text-lg hover:brightness-110 transition-all">
-            Start Your Free Trial
+            Commencer Votre Essai Gratuit
           </button>
           <button class="glass px-10 py-4 rounded-xl font-bold text-lg hover:bg-white/10 transition-all">
-            Talk to Sales
+            Parler aux Ventes
           </button>
         </div>
       </div>
@@ -191,14 +201,14 @@ const goToApp = () => {
           <span class="text-md font-bold">MeteoApp Premium</span>
         </div>
         <div class="flex flex-wrap justify-center gap-8 text-sm font-medium text-slate-500">
-          <a class="hover:text-white transition-colors cursor-pointer">Privacy Policy</a>
-          <a class="hover:text-white transition-colors cursor-pointer">Terms of Service</a>
-          <a class="hover:text-white transition-colors cursor-pointer">Security</a>
-          <a class="hover:text-white transition-colors cursor-pointer">Status</a>
+          <a class="hover:text-white transition-colors cursor-pointer">Politique de Confidentialité</a>
+          <a class="hover:text-white transition-colors cursor-pointer">Conditions d'Utilisation</a>
+          <a class="hover:text-white transition-colors cursor-pointer">Sécurité</a>
+          <a class="hover:text-white transition-colors cursor-pointer">Statut</a>
         </div>
       </div>
       <div class="text-center mt-10 text-xs text-slate-600 font-medium">
-        © 2026 MeteoApp Premium Enterprise. Precision Engineered globally.
+        © 2026 MeteoApp Premium Entreprise. Précision conçue mondialement.
       </div>
     </footer>
   </div>

@@ -46,15 +46,15 @@ const initMap = async () => {
   }).addTo(map)
 
   // Add dark theme tile layer
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    maxZoom: 19
+  L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 20
   }).addTo(map)
 
-  // Add temperature overlay from OpenWeatherMap (free, no API key needed for tiles)
+  // Add temperature overlay from OpenWeatherMap
   temperatureLayer = L.tileLayer('https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02', {
-    opacity: 0.5,
-    attribution: 'Weather from OpenWeatherMap'
+    opacity: 0.6,
+    attribution: 'Météo par OpenWeatherMap'
   }).addTo(map)
 
   // Custom marker icon
@@ -189,17 +189,17 @@ watch(() => [props.city, props.country, props.weather], () => {
           </svg>
         </div>
         <div>
-          <h3 class="text-lg font-extrabold">Interactive Weather Map</h3>
-          <p class="text-xs text-slate-400 font-bold">Live temperature overlay</p>
+          <h3 class="text-lg font-extrabold">Carte Météo Interactive</h3>
+          <p class="text-xs text-slate-400 font-bold">Overlay de température en direct</p>
         </div>
       </div>
       <div class="flex items-center gap-2 text-xs text-slate-400 font-bold">
-        <span class="w-3 h-3 bg-blue-500 rounded"></span>
-        <span>Cold</span>
-        <span class="w-3 h-3 bg-yellow-500 rounded"></span>
-        <span>Moderate</span>
-        <span class="w-3 h-3 bg-red-500 rounded"></span>
-        <span>Hot</span>
+        <span class="w-3 h-3 bg-blue-500 rounded inline-block"></span>
+        <span>Froid</span>
+        <span class="w-3 h-3 bg-yellow-500 rounded inline-block ml-2"></span>
+        <span>Modéré</span>
+        <span class="w-3 h-3 bg-red-500 rounded inline-block ml-2"></span>
+        <span>Chaud</span>
       </div>
     </div>
     <div ref="mapContainer" class="w-full h-[600px] relative"></div>
